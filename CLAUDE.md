@@ -27,3 +27,4 @@ Målgruppe: medlemmer af STØD Medical.
 ## Arbejdsgang
 
 - Opret **ingen arbejdsblade eller Confluence-sider** for dette projekt, før brugeren siger til.
+- Kropsmodellen bygges med `node tools/build-body.mjs`. Tjek regionsgrænser med `node tools/region-map.mjs`.

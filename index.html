@@ -3,43 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Droneskader 3D</title>
+    <title>Droneskader</title>
   </head>
   <body>
     <header>
-      <h1>Droneskader <span>· 3D førstehjælpstræner</span></h1>
-      <div id="views">
-        <button data-view="front">Forfra</button>
-        <button data-view="side">Side</button>
-        <button data-view="back">Bagfra</button>
-        <button data-view="top">Top</button>
+      <div class="brand">
+        <span id="logo" aria-label="STØD Medical"></span>
+        <h1 data-i18n="title">Droneskader</h1>
+      </div>
+      <span class="stamp" id="stamp"></span>
+      <div class="toggle" id="lang">
+        <button data-lang="da">DA</button>
+        <button data-lang="en">EN</button>
       </div>
     </header>
     <main>
-      <aside id="controls">
+      <aside id="left">
         <section>
-          <h2>Udrustning</h2>
-          <div id="presets" class="seg"></div>
-          <div id="gear-list"></div>
-          <label class="slider">Synlighed af udrustning
-            <input id="gear-opacity" type="range" min="0.15" max="1" step="0.05" value="1" />
+          <span class="label" data-i18n="layers"></span>
+          <div id="layer-list"></div>
+          <label class="slider">
+            <span class="label" data-i18n="skinOpacity"></span>
+            <input id="skin-opacity" type="range" min="0.1" max="1" step="0.05" value="1" />
           </label>
         </section>
         <section>
-          <h2>Detonation</h2>
-          <label class="field">Retning <select id="direction"></select></label>
-          <label class="slider">Afstand <output id="distance-out">1.5 m</output>
-            <input id="distance" type="range" min="0.5" max="4" step="0.1" value="1.5" />
-          </label>
-          <div class="row">
-            <button id="simulate" class="primary">Simulér</button>
-            <button id="reset">Nulstil</button>
-          </div>
+          <span class="label" data-i18n="munitions"></span>
+          <div id="munition-list"></div>
         </section>
-        <p class="disclaimer">Illustrativ model – ikke en ballistisk simulering. Procenterne er pædagogiske eksempler. Medicinsk indhold bygger på TCCC-principper og skal valideres før undervisning.</p>
       </aside>
-      <div id="viewport"></div>
-      <aside id="info"></aside>
+      <div id="viewport">
+        <div id="views">
+          <button data-view="front" data-i18n="front"></button>
+          <button data-view="side" data-i18n="side"></button>
+          <button data-view="back" data-i18n="back"></button>
+          <button data-view="top" data-i18n="top"></button>
+        </div>
+        <div id="coords"></div>
+      </div>
+      <aside id="right"><div id="info"></div></aside>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

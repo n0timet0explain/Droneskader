@@ -16,9 +16,14 @@
   },
   "homepage": "https://github.com/n0timet0explain/Droneskader#readme",
   "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "vite": "^6.4.3",
     "vite-plugin-singlefile": "^2.3.3"
   },
