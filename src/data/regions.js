@@ -83,32 +83,27 @@ export const REGIONS = {
   },
 };
 
-// Klassificering af et punkt på MakeHuman-kroppen (meter, A-stilling, ansigt mod +z).
-// Grænserne er målt på modellen og er grove; de forfines når de indre lag er på plads.
-// Torsoens midtlinje ligger ved z ≈ -0.115 (hænderne er foran kroppen i A-stillingen).
-const Z0 = -0.115;
+// Z-Anatomys hudregioner (anatomisk nomenklatur) -> kliniske regioner i værktøjet
+const SKIN_MAP = {
+  hoved: ['Frontal region', 'Mastoid region', 'Occipital region', 'Parietal region', 'Temporal region', 'Auricular region', 'Cavity of concha', 'Concha of auricle', 'Cymba conchae', 'Anterior notch of auricle', 'Antihelix', 'Antitragus', 'Apex of auricle', 'Auricular tubercle', 'Crura of antihelix', 'Eminentia conchae', 'Eminentia fossae triangularis', 'Eminentia scaphae', 'Fossa antihelica', 'Helix', 'Intertragic incisure', 'Lobule of auricle', 'Scapha', 'Tragus', 'Triangular fossa', 'Posterior auricular groove'],
+  oejne: ['Orbital region'],
+  ansigt: ['Eyebrow', 'Nasal region', 'Oral region', 'Angle of mouth', 'Labial commissure', 'Philtrum', 'Tubercle of upper lip', 'Buccal region', 'Infra-orbital region', 'Mental region', 'Mentolabial sulcus', 'Parotideomasseteric region', 'Zygomatic region', 'Nasolabial sulcus'],
+  hals: ['Posterior region of neck', 'Lateral region of neck', 'Greater supraclavicular fossa', 'Lesser supraclavicular fossa', 'Submandibular triangle', 'Submental triangle', 'Carotid triangle', 'Muscular triangle', 'Sternocleidomastoid region'],
+  thorax: ['Pectoral region', 'Inframammary region', 'Mammary region', 'Infraclavicular fossa', 'Presternal region', 'Deltopectoral triangle', 'Scapular region', 'Interscapular region', 'Infrascapular region', 'Triangle of auscultation', 'Vertebral region'],
+  aksil: ['Lateral region of thorax'],
+  abdomen: ['Epigastric region', 'Umbilical region', 'Umbilicus', 'Hypochondriac region', 'Hypogastric region', 'Lateral region of abdomen', 'Lumbar region'],
+  lyske: ['Inguinal region', 'Femoral triangle', 'Urogenital region', 'Anal region', 'Sacral region', 'Hip region', 'Gluteal region', 'Gluteal fold'],
+  overarm: ['Deltoid region', 'Anterior region of arm', 'Posterior region of arm', 'Lateral bicipital groove', 'Medial bicipital groove'],
+  underarm: ['Anterior region of elbow', 'Posterior region of elbow', 'Cubital fossa', 'Anterior region of forearm', 'Posterior region of forearm', 'Lateral border of forearm', 'Medial border of forearm', 'Anterior region of wrist', 'Posterior region of wrist', 'Radial foveola', 'Palm', 'Dorsum of hand', 'Palmar surfaces of digits of hand', 'Dorsal surfaces of digits of hand', 'Nail plate', 'Perionyx'],
+  laar: ['Anterior region of thigh', 'Posterior region of thigh', 'Anterior region of knee', 'Posterior region of knee', 'Popliteal fossa'],
+  underben: ['Anterior region of leg', 'Posterior region of leg', 'Lateral malleolus', 'Medial malleolus', 'Anterior region of ankle', 'Lateral retromalleolar region', 'Medial retromalleolar region', 'Sole', 'Lateral part of longitudinal arch of foot', 'Medial part of longitudinal arch of foot', 'Proximal transverse arch of foot', 'Distal transverse arch of foot', 'Metatarsal region', 'Hallucial eminence', 'Heel region', 'Dorsum of foot', 'Lateral border of foot', 'Medial border of foot', 'Dorsal surfaces of digits of foot', 'Nail plate (foot)', 'Perionyx (foot)', 'Plantar surfaces of digits of foot'],
+};
+const BY_NAME = new Map(Object.entries(SKIN_MAP).flatMap(([id, names]) => names.map((n) => [n, id])));
 
-export function regionAt(p) {
-  const ax = Math.abs(p.x);
-  const z = p.z - Z0; // > 0 = forside
-  const side = p.x > 0 ? 'left' : 'right'; // modellens venstre side er +x
-  const sided = (id) => ({ id, side });
-
-  if (p.y > 1.56) {
-    if (z > 0.06 && p.y < 1.715 && ax < 0.075) {
-      if (p.y > 1.655 && p.y < 1.7 && ax > 0.012 && ax < 0.058 && z > 0.1) return sided('oejne');
-      return { id: 'ansigt' };
-    }
-    return { id: 'hoved' };
-  }
-  if (p.y > 1.48 && ax < 0.085) return { id: 'hals' };
-
-  // Arme: udenfor torsoens bredde. Albuen ligger ved y ≈ 1.21.
-  if (p.y > 0.95 && (ax > 0.25 || (p.y < 1.3 && ax > 0.19))) return sided(p.y > 1.21 ? 'overarm' : 'underarm');
-  if (p.y > 1.26 && p.y < 1.42 && ax > 0.14 && Math.abs(z) < 0.07) return sided('aksil');
-  if (p.y > 1.2) return { id: 'thorax' };
-  if (p.y > 0.99) return { id: 'abdomen' };
-  if (p.y > 0.8) return ax > 0.05 && z > 0 ? sided('lyske') : { id: 'lyske' };
-  if (p.y > 0.47) return sided('laar');
-  return sided('underben');
+// Klinisk region for en hudstruktur. Thorax' sideflade regnes som armhule øverst (højde over ~1,25 m).
+export function regionForSkin(name, point) {
+  let id = BY_NAME.get(name);
+  if (id === 'aksil' && point.y < 1.25) id = 'thorax';
+  if (!id && /^(eyeball|cornea|sclera|iris|pupil)/i.test(name)) id = 'oejne';
+  return id || null;
 }

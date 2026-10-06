@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 
-export const LAYERS = ['skin', 'muscle', 'vessels', 'organs', 'skeleton'];
+export const LAYERS = ['skin', 'muscle', 'vessels', 'nerves', 'organs', 'skeleton'];
 
+// Klinisk farvekodning: arterier røde, vener blå, nerver gule (standard i anatomisk illustration)
 const MATERIALS = {
-  skin: () => new THREE.MeshPhysicalMaterial({ color: 0xc8957a, roughness: 0.55, sheen: 0.4, sheenColor: 0xffd9c4, sheenRoughness: 0.6, transparent: true }),
-  muscle: () => new THREE.MeshStandardMaterial({ color: 0x9e3b32, roughness: 0.6 }),
-  vessels: () => new THREE.MeshStandardMaterial({ color: 0xa61e1e, roughness: 0.4 }),
-  organs: () => new THREE.MeshStandardMaterial({ color: 0xb06a5a, roughness: 0.5 }),
-  skeleton: () => new THREE.MeshStandardMaterial({ color: 0xe6dccb, roughness: 0.7 }),
+  skin: new THREE.MeshPhysicalMaterial({ color: 0xc8957a, roughness: 0.55, sheen: 0.4, sheenColor: 0xffd9c4, sheenRoughness: 0.6, transparent: true }),
+  eye: new THREE.MeshPhysicalMaterial({ color: 0xe8e4dc, roughness: 0.15, clearcoat: 1 }),
+  muscle: new THREE.MeshStandardMaterial({ color: 0x9e3b32, roughness: 0.6 }),
+  artery: new THREE.MeshStandardMaterial({ color: 0xb3221c, roughness: 0.4 }),
+  vein: new THREE.MeshStandardMaterial({ color: 0x2f4f8f, roughness: 0.4 }),
+  nerves: new THREE.MeshStandardMaterial({ color: 0xe0c255, roughness: 0.5 }),
+  organs: new THREE.MeshStandardMaterial({ color: 0xb06a5a, roughness: 0.5 }),
+  skeleton: new THREE.MeshStandardMaterial({ color: 0xe6dccb, roughness: 0.7 }),
 };
 
 export function createScene(container) {
@@ -23,7 +28,7 @@ export function createScene(container) {
   const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 50);
   camera.position.set(1.4, 1.35, 3.4);
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 0.95, 0);
+  controls.target.set(0, 0.92, 0);
   controls.enableDamping = true;
   controls.minDistance = 0.4;
   controls.maxDistance = 8;
@@ -55,13 +60,15 @@ export function createScene(container) {
   scene.add(marker);
 
   async function load(url) {
-    const gltf = await new GLTFLoader().loadAsync(url);
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url);
     gltf.scene.traverse((o) => {
       if (!o.isMesh) return;
-      const layer = o.userData.layer || o.parent?.userData.layer;
-      if (!LAYERS.includes(layer)) return;
-      o.material = MATERIALS[layer]();
-      layers[layer].push(o);
+      // Extras ligger på noden; ved flere primitiver er meshen et barn af noden
+      const info = o.userData.layer ? o.userData : o.parent?.userData;
+      if (!LAYERS.includes(info?.layer)) return;
+      o.userData = info;
+      o.material = MATERIALS[info.kind === 'eye' ? 'eye' : info.layer === 'vessels' ? info.kind || 'artery' : info.layer];
+      layers[info.layer].push(o);
     });
     body.add(gltf.scene);
   }
@@ -71,16 +78,19 @@ export function createScene(container) {
   }
 
   function setSkinOpacity(alpha) {
-    layers.skin.forEach((m) => {
-      m.material.opacity = alpha;
-      m.material.depthWrite = alpha > 0.98;
-    });
+    MATERIALS.skin.opacity = alpha;
+    MATERIALS.skin.depthWrite = alpha > 0.98;
+    layers.skin.filter((m) => m.userData.kind === 'eye').forEach((m) => (m.visible = alpha > 0.98));
   }
 
   const raycaster = new THREE.Raycaster();
   function pick(ndc) {
     raycaster.setFromCamera(ndc, camera);
-    const targets = LAYERS.flatMap((l) => layers[l]).filter((m) => m.visible);
+    // Er huden gennemsigtig, klikker man igennem den til strukturerne nedenunder
+    const skipSkin = MATERIALS.skin.opacity < 0.98;
+    const targets = LAYERS.filter((l) => !(skipSkin && l === 'skin'))
+      .flatMap((l) => layers[l])
+      .filter((m) => m.visible);
     const hit = raycaster.intersectObjects(targets, false)[0];
     if (!hit) {
       marker.visible = false;
@@ -93,10 +103,10 @@ export function createScene(container) {
     return hit;
   }
 
-  const VIEWS = { front: [0, 1.1, 3.4], back: [0, 1.1, -3.4], side: [3.4, 1.1, 0], top: [0.01, 4.4, 0.4] };
+  const VIEWS = { front: [0, 1.05, 3.3], back: [0, 1.05, -3.3], side: [3.3, 1.05, 0], top: [0.01, 4.3, 0.4] };
   function view(name) {
     camera.position.set(...VIEWS[name]);
-    controls.target.set(0, 0.95, 0);
+    controls.target.set(0, 0.92, 0);
   }
 
   function resize() {

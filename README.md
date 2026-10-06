@@ -16,18 +16,31 @@ npm run build   # dist/index.html – én selvstændig fil, kører offline
 - `src/data/regions.js` – kropsregioner, strukturer under huden og klassificering af et punkt
 - `src/data/munitions.js` – HE-FRAG-ladninger (RAP-009 + RGD-5)
 - `src/styles.css` – STØD Medical Tactical Minimalism
-- `tools/build-body.mjs` – bygger `src/assets/body.glb` fra MakeHuman-kilderne
-- `tools/region-map.mjs` – ASCII-kort til at tjekke regionsgrænserne
+- `src/data/descriptions.json` – første afsnit af Z-Anatomys beskrivelse pr. struktur (genereret)
+- `tools/build-anatomy.mjs` – bygger `src/assets/anatomy.glb` og `descriptions.json` fra Z-Anatomy
 
 ## Anatomiske lag
-| Lag | Status | Kilde |
+Alle lag kommer fra **Z-Anatomy** (baseret på BodyParts3D) og deler samme koordinatsystem: meter, y op, ansigt mod +z, anatomisk stilling.
+
+| Lag | Indhold | Farve |
 |---|---|---|
-| Hud | Indlæst | MakeHuman basismesh + mande-targets (CC0) |
-| Muskler, kar og nerver, organer, skelet | Mangler | Planlagt: Z-Anatomy / BodyParts3D (CC BY-SA) |
+| `skin` | 250 hudregioner med anatomiske navne + øjnenes overflade | Hud |
+| `muscle` | Skeletmuskler (fascier fjernet) | Rød |
+| `vessels` | Arterier og vener (`kind: artery/vein`) | Rød / blå |
+| `nerves` | Hjerne, rygmarv, perifere nerver, sanseorganer | Gul |
+| `organs` | Indre organer + hjertet | Organfarve |
+| `skeleton` | Knogler, brusk, ledbånd | Knogle |
 
-Lag indlæses fra GLB-noder med `extras.layer` = `skin | muscle | vessels | organs | skeleton`.
+Hver node har `extras = { layer, kind, name, side }`. Klik på huden slår hudregionens navn op i `src/data/regions.js`.
 
-## Licenser for assets
-- MakeHuman basismesh og targets: CC0 (Data Collection AB m.fl.), `assets/models/`
+### Genopbyg modellen
+```
+git clone --depth 1 https://github.com/LluisV/Z-Anatomy /tmp/z-anatomy   # ca. 1,6 GB
+node tools/build-anatomy.mjs /tmp/z-anatomy/Resources/Models/FBX
+```
+Scriptet konverterer FBX med FBX2glTF, fjerner etiketter, muskelfæster, fascier og hår, forenkler geometrien (meshoptimizer) og komprimerer med `EXT_meshopt_compression`.
+
+## Licenser
+- **Anatomi** (`src/assets/anatomy.glb`, `src/data/descriptions.json`): afledt af [Z-Anatomy](https://github.com/LluisV/Z-Anatomy) af Lluís Vinent Juanico og Z-Anatomy-projektet, **CC BY-SA 4.0**. Beskrivelserne stammer fra Wikipedia (CC BY-SA). Ændringer: konverteret til glTF, filtreret, forenklet og komprimeret. De afledte filer deles under samme licens.
 - STØD Medical-logo: STØD Medical
 - Fonte: Barlow, Barlow Condensed, IBM Plex Mono (SIL OFL) via Fontsource

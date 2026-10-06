@@ -8,16 +8,18 @@ import '@fontsource/ibm-plex-mono/500.css';
 import './styles.css';
 import * as THREE from 'three';
 import logoSvg from './assets/logo.svg?raw';
-import bodyUrl from './assets/body.glb?url';
+import anatomyUrl from './assets/anatomy.glb?url';
+import DESCRIPTIONS from './data/descriptions.json';
 import { createScene, LAYERS } from './scene.js';
 import { t, tr, setLang, getLang, onLang, applyStatic, dtg } from './i18n.js';
-import { REGIONS, TYPES, regionAt } from './data/regions.js';
+import { REGIONS, TYPES, regionForSkin } from './data/regions.js';
 import { MUNITIONS } from './data/munitions.js';
 
 const LAYER_NAMES = {
   skin: { da: 'Hud', en: 'Skin' },
   muscle: { da: 'Muskler', en: 'Muscles' },
-  vessels: { da: 'Kar og nerver', en: 'Vessels and nerves' },
+  vessels: { da: 'Kar · arterier og vener', en: 'Vessels · arteries and veins' },
+  nerves: { da: 'Nervesystem', en: 'Nervous system' },
   organs: { da: 'Organer', en: 'Organs' },
   skeleton: { da: 'Skelet', en: 'Skeleton' },
 };
@@ -32,7 +34,7 @@ let selection = null; // { kind: 'region' | 'munition', ... }
 
 // ── Lag ────────────────────────────────────────────────────
 const layerList = document.getElementById('layer-list');
-const layerOn = { skin: true, muscle: true, vessels: true, organs: true, skeleton: true };
+const layerOn = Object.fromEntries(LAYERS.map((l) => [l, true]));
 
 function renderLayers() {
   layerList.innerHTML = LAYERS.map((l) => {
@@ -76,7 +78,8 @@ function show(sel) {
       <span class="label">FIG. 01 · ${t('introTitle')}</span>
       <h2>${t('introTitle')}</h2>
       <p>${t('intro')}</p>
-      <p class="callout muted">${t('introNote')}</p>`;
+      <p class="callout muted">${t('introNote')}</p>
+      <p class="meta" style="margin-top:24px">${t('credits')}</p>`;
     return;
   }
   if (sel.kind === 'region') {
@@ -86,11 +89,20 @@ function show(sel) {
       <button class="back" id="back">${t('back_')}</button>
       <span class="label">${t('region')} · ${tr(TYPES[r.type])}</span>
       <h2>${tr(r.name)}${side}</h2>
-      <div class="row">${statusBadge('draft')}</div>
+      <div class="meta">${sel.anatomical}</div>
+      <div class="row" style="margin-top:8px">${statusBadge('draft')}</div>
       <h3>${t('structures')}</h3>
       <ul class="structs">${r.structures.map((s) => `<li>${tr(s)}</li>`).join('')}</ul>
       <h3>${t('significance')}</h3>
       <p class="callout">${tr(r.significance)}</p>`;
+  } else if (sel.kind === 'structure') {
+    const d = DESCRIPTIONS[sel.name];
+    const side = sel.side ? ` (${t(sel.side)})` : '';
+    info.innerHTML = `
+      <button class="back" id="back">${t('back_')}</button>
+      <span class="label">${t('structure')} · ${tr(LAYER_NAMES[sel.layer])}</span>
+      <h2>${sel.name}${side}</h2>
+      ${d ? `<h3>${t('description')}</h3>${d.split('\n\n').map((p) => `<p>${p}</p>`).join('')}<p class="meta">${t('descSource')}</p>` : `<p class="muted">${t('noDescription')}</p>`}`;
   } else {
     const m = MUNITIONS.find((x) => x.id === sel.id);
     info.innerHTML = `
@@ -121,8 +133,12 @@ canvas.addEventListener('pointerup', (e) => {
   const hit = app.pick(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1));
   if (!hit) return;
   const p = hit.point;
-  coords.textContent = `X ${p.x.toFixed(3)} · Y ${p.y.toFixed(3)} · Z ${p.z.toFixed(3)} M`;
-  show({ kind: 'region', ...regionAt(p) });
+  const u = hit.object.userData;
+  const side = u.side === 'l' ? 'left' : u.side === 'r' ? 'right' : null;
+  coords.textContent = `${u.name} · X ${p.x.toFixed(3)} · Y ${p.y.toFixed(3)} · Z ${p.z.toFixed(3)} M`;
+  const region = u.layer === 'skin' && regionForSkin(u.name, p);
+  if (region) show({ kind: 'region', id: region, side, anatomical: u.name });
+  else show({ kind: 'structure', name: u.name, layer: u.layer, side });
 });
 
 document.getElementById('views').addEventListener('click', (e) => e.target.dataset.view && app.view(e.target.dataset.view));
@@ -148,4 +164,8 @@ document.documentElement.lang = getLang();
 applyStatic();
 renderChrome();
 
-app.load(bodyUrl).then(renderLayers);
+coords.textContent = t('loading');
+app.load(anatomyUrl).then(() => {
+  coords.textContent = '';
+  renderLayers();
+});
