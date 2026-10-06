@@ -13,7 +13,7 @@ Målgruppe: medlemmer af STØD Medical.
 ## Afgrænsning
 
 - Første fokus: **at forstå skaderne** (mekanisme og hvordan de ser ud på kroppen).
-- Ladninger: **kun spræng-splint (HE-FRAG) for nu**, dvs. OFBCh-1.7 til -4 (FPV) og OFSP-0.5 til -2.5 (nedkastede bomblets). Kumulativ/EFP, termobarisk, brandstiftende og retningsbestemt anti-drone-splint (OFBCh-0.4/0.5/0.8) er udenfor scope.
+- Ladninger: **kun spræng-splint (HE-FRAG) for nu**, dvs. OFBCh-1.7 til -4 (FPV) og OFSP-0.5 til -2.5 (nedkastede bomblets) samt en typisk russisk håndgranat (RGD-5, evt. F-1) som improviseret droneammunition. Håndgranater er ikke med i RAP-009 og kræver egen kilde. Kumulativ/EFP, termobarisk, brandstiftende og retningsbestemt anti-drone-splint (OFBCh-0.4/0.5/0.8) er udenfor scope.
 - MARCH/TCCC-førstehjælp og udstyrskatalog bliver, men kommer i anden række.
 - Ingen gap-analyse af udstyr i dette værktøj.
 
